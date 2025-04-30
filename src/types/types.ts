@@ -1,6 +1,6 @@
 // Types definitions
-export type GameState = 'start' | 'playing' | 'paused' | 'gameOver';
-export type PowerUpType = 'doubleShot' | 'tripleShot' | 'health';
+export type GameState = 'start' | 'playing' | 'paused' | 'gameOver' | 'victory';
+export type PowerUpType = 'doubleShot' | 'tripleShot' | 'superShot' | 'health';
 
 export interface GameObject {
   x: number;
@@ -33,4 +33,5 @@ export interface Boss extends GameObject {
   maxHealth: number;
   direction: number;
   attackCooldown: number;
+  isFinal?: boolean;
 }

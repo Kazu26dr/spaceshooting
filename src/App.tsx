@@ -27,6 +27,8 @@ export default function SpaceShooter() {
   const [bulletCooldown, setBulletCooldown] = useState<boolean>(false);
   const [doubleShot, setDoubleShot] = useState<boolean>(false);
   const [tripleShot, setTripleShot] = useState<boolean>(false);
+  const [superShot, setSuperShot] = useState<boolean>(false);
+  const [isFinalBoss, setIsFinalBoss] = useState<boolean>(false);
   
   // Touch controls
   const [touchMove, setTouchMove] = useState<{ x: number; y: number } | null>(null);
@@ -60,6 +62,8 @@ export default function SpaceShooter() {
     setBoss(null);
     setDoubleShot(false);
     setTripleShot(false);
+    setSuperShot(false);
+    setIsFinalBoss(false);
   };
   
   // Pause/resume game
@@ -183,7 +187,16 @@ export default function SpaceShooter() {
   const shootBullet = () => {
     setBulletCooldown(true);
     
-    if (tripleShot) {
+    if (superShot) {
+      setBullets(prev => [
+        ...prev, 
+        { x: player.x - 4, y: player.y - 6, width: 2, height: 4 },
+        { x: player.x - 2, y: player.y - 6, width: 2, height: 4 },
+        { x: player.x + player.width / 2 - 1, y: player.y - 6, width: 2, height: 4 },
+        { x: player.x + player.width - 2, y: player.y - 6, width: 2, height: 4 },
+        { x: player.x + player.width, y: player.y - 6, width: 2, height: 4 }
+      ]);
+    } else if (tripleShot) {
       setBullets(prev => [
         ...prev, 
         { x: player.x - 2, y: player.y - 4, width: 2, height: 4 },
@@ -252,15 +265,17 @@ export default function SpaceShooter() {
     }
     
     // Spawn power-up (rare)
-    if (Math.random() < 0.003) {
+    if (Math.random() < 0.001) {
       // Add tripleShot to possible power-ups
       const powerUpRandom = Math.random();
       let powerType: PowerUpType;
       
       if (powerUpRandom < 0.4) {
         powerType = 'doubleShot';
-      } else if (powerUpRandom < 0.8) {
+      } else if (powerUpRandom < 0.7) {
         powerType = 'tripleShot';
+      } else if (powerUpRandom < 0.8) {
+        powerType = 'superShot';
       } else {
         powerType = 'health';
       }
@@ -278,17 +293,33 @@ export default function SpaceShooter() {
       ]);
     }
     
-    // Spawn boss after every 500 points
-    if (score > 0 && score % 500 === 0 && !boss) {
+    // レベル10の後にボスを出現させる
+    if (level === 10 && score >= 900 && !boss && !isFinalBoss) {
+      setIsFinalBoss(true);
+      setBoss({
+        x: gameWidth / 2 - 20,
+        y: 10,
+        width: 40,
+        height: 20,
+        health: 50,
+        maxHealth: 50,
+        direction: 1,
+        attackCooldown: 0,
+        isFinal: true
+      });
+    }
+    // 通常のボスを500スコアごとに出現させる
+    else if (level < 10 && score > 0 && score % 500 === 0 && !boss && !isFinalBoss) {
       setBoss({
         x: gameWidth / 2 - 15,
         y: 10,
         width: 30,
         height: 15,
-        health: 20,
-        maxHealth: 20,
+        health: 30,
+        maxHealth: 30,
         direction: 1,
-        attackCooldown: 0
+        attackCooldown: 0,
+        isFinal: false
       });
     }
   };
@@ -332,27 +363,37 @@ export default function SpaceShooter() {
       });
       
       // Check for boss
-      if (boss && isColliding(bullet, boss)) {
-        // Mark bullet for removal
-        if (!bulletsToRemove.includes(bulletIndex)) {
-          bulletsToRemove.push(bulletIndex);
-        }
+      setBoss(prev => {
+        if (!prev) return null;
         
-        // Damage boss
-        setBoss(prev => {
-          if (!prev) return null;
-          
-          if (prev.health <= 1) {
-            // Boss defeated
-            setScore(prev => prev + 100);
-            setLevel(prev => prev + 1);
-            return null;
-          } else {
-            // Boss takes damage
-            return {...prev, health: prev.health - 1};
+        // ボスと弾の当たり判定
+        bullets.forEach((bullet, bulletIndex) => {
+          if (!bullet.isEnemy && isColliding(bullet, prev)) {
+            // 弾を削除
+            setBullets(prevBullets => prevBullets.filter((_, index) => index !== bulletIndex));
+            // ボスの体力を減少
+            prev.health -= 1;
           }
         });
-      }
+        
+        if (prev.health <= 0) {
+          // Boss defeated
+          if (prev.isFinal) {
+            // Final boss defeated - game victory
+            setGameState('victory');
+            return null;
+          } else {
+            // Regular boss defeated
+            setScore(prev => prev + 100);
+            if (level < 10) {
+              setLevel(prev => prev + 1);
+            }
+            return null;
+          }
+        }
+        
+        return prev;
+      });
     });
 
     // Check for enemy bullets hitting player
@@ -406,6 +447,7 @@ export default function SpaceShooter() {
           // Cancel tripleShot if active
           setTripleShot(false);
           setDoubleShot(true);
+          setSuperShot(false);
           
           // Double shot lasts for 10 seconds
           setTimeout(() => {
@@ -415,10 +457,21 @@ export default function SpaceShooter() {
           // Cancel doubleShot if active
           setDoubleShot(false);
           setTripleShot(true);
+          setSuperShot(false);
           
           // Triple shot lasts for 10 seconds
           setTimeout(() => {
             setTripleShot(false);
+          }, 10000);
+        } else if (powerUp.type === 'superShot') {
+          // Cancel doubleShot if active
+          setDoubleShot(false);
+          setTripleShot(true);
+          setSuperShot(true);
+
+          // Triple shot lasts for 10 seconds
+          setTimeout(() => {
+            setSuperShot(false);
           }, 10000);
         } else if (powerUp.type === 'health' && lives < 5) {
           setLives(prev => prev + 1);
@@ -519,14 +572,27 @@ export default function SpaceShooter() {
           // Boss attacks
           let attackCooldown = prev.attackCooldown + 1;
           if (attackCooldown >= 50) { // Attack every 50 frames
-            // Shoot 3 bullets
-            setBullets(bullets => [
-              ...bullets,
-              // Boss's bullets (these move downward)
-              { x: prev.x + 5, y: prev.y + prev.height, width: 3, height: 5, isEnemy: true },
-              { x: prev.x + prev.width/2 - 1.5, y: prev.y + prev.height, width: 3, height: 5, isEnemy: true },
-              { x: prev.x + prev.width - 8, y: prev.y + prev.height, width: 3, height: 5, isEnemy: true }
-            ]);
+            // ボスの種類によって攻撃パターンを変える
+            if (prev.isFinal) {
+              // 最終ボスは5発の弾を発射
+              setBullets(bullets => [
+                ...bullets,
+                // 5発の弾（左から右へ）
+                { x: prev.x + 2, y: prev.y + prev.height, width: 3, height: 5, isEnemy: true },
+                { x: prev.x + prev.width*0.25, y: prev.y + prev.height, width: 3, height: 5, isEnemy: true },
+                { x: prev.x + prev.width/2 - 1.5, y: prev.y + prev.height, width: 3, height: 5, isEnemy: true },
+                { x: prev.x + prev.width*0.75 - 3, y: prev.y + prev.height, width: 3, height: 5, isEnemy: true },
+                { x: prev.x + prev.width - 5, y: prev.y + prev.height, width: 3, height: 5, isEnemy: true }
+              ]);
+            } else {
+              // 通常ボスは3発の弾を発射
+              setBullets(bullets => [
+                ...bullets,
+                { x: prev.x + 5, y: prev.y + prev.height, width: 3, height: 5, isEnemy: true },
+                { x: prev.x + prev.width/2 - 1.5, y: prev.y + prev.height, width: 3, height: 5, isEnemy: true },
+                { x: prev.x + prev.width - 8, y: prev.y + prev.height, width: 3, height: 5, isEnemy: true }
+              ]);
+            }
             attackCooldown = 0;
           }
           
@@ -549,10 +615,12 @@ export default function SpaceShooter() {
       // Spawn enemies
       spawnEnemies();
       
-      // Level up based on score
-      const newLevel = Math.floor(score / 200) + 1;
-      if (newLevel > level) {
-        setLevel(newLevel);
+      // Level up based on score (最大レベル10まで)
+      if (level < 10) {
+        const newLevel = Math.min(Math.floor(score / 200) + 1, 10);
+        if (newLevel > level) {
+          setLevel(newLevel);
+        }
       }
     };
     
@@ -649,7 +717,9 @@ export default function SpaceShooter() {
                     ? 'bg-yellow-400' 
                     : powerUp.type === 'tripleShot' 
                       ? 'bg-purple-400' 
-                      : 'bg-green-400'
+                      : powerUp.type === 'superShot' 
+                        ? 'bg-rose-400'
+                        : 'bg-green-400'
                 } rounded-full flex items-center justify-center`}
                 style={{
                   left: `${powerUp.x}%`,
@@ -659,7 +729,7 @@ export default function SpaceShooter() {
                 }}
               >
                 <div className="text-xs font-bold">
-                  {powerUp.type === 'doubleShot' ? '2x' : powerUp.type === 'tripleShot' ? '3x' : '+'}
+                  {powerUp.type === 'doubleShot' ? '2x' : powerUp.type === 'tripleShot' ? '3x' : powerUp.type === 'superShot' ? '5x' : '+'}
                 </div>
               </div>
             ))}
@@ -677,7 +747,7 @@ export default function SpaceShooter() {
                 }}
               >
                 <div 
-                  className="bg-red-700 w-full h-full"
+                  className={`${boss.isFinal ? 'bg-purple-800' : 'bg-red-700'} w-full h-full`}
                 />
                 {/* Boss health bar */}
                 <div 
@@ -690,7 +760,7 @@ export default function SpaceShooter() {
                   }}
                 >
                   <div 
-                    className="bg-red-500 h-full"
+                    className={`${boss.isFinal ? 'bg-purple-500' : 'bg-red-500'} h-full`}
                     style={{
                       width: `${(boss.health / boss.maxHealth) * 100}%`
                     }}
@@ -739,6 +809,20 @@ export default function SpaceShooter() {
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-70">
             <h2 className="text-2xl mb-2">Game Over</h2>
             <p className="mb-6">Your score: {score}</p>
+            <button 
+              onClick={startGame}
+              onTouchStart={startGame}
+              className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded mb-2"
+            >
+              <RefreshCw size={16} className="mr-2" /> Play Again
+            </button>
+          </div>
+        )}
+        {/* Victory screen */}
+        {gameState === 'victory' && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-70">
+            <h2 className="text-2xl mb-2">Victory!!!!!</h2>
+            <p className="mb-6">You're Winner!!!!!</p>
             <button 
               onClick={startGame}
               onTouchStart={startGame}
