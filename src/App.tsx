@@ -221,6 +221,9 @@ export default function SpaceShooter() {
   
   // Spawn enemies
   const spawnEnemies = () => {
+    // ボスが存在する場合は通常の敵を生成しない
+    if (boss) return;
+
     // レベルに応じた敵の出現頻度を計算
     const baseSpawnChance = 0.01; // 基本の出現確率
     const levelMultiplier = 0.005; // レベルごとの増加率
@@ -319,10 +322,12 @@ export default function SpaceShooter() {
             if (!enemiesToRemove.includes(enemyIndex)) {
               enemiesToRemove.push(enemyIndex);
             }
-            setScore(prev => prev + 10);
-          } else {
-            setEnemies(updatedEnemies);
+            // 敵のタイプに応じてスコアを変更
+            setScore(prev => prev + (updatedEnemies[enemyIndex].type === 'fast' ? 20 : 10));
           }
+          
+          // 敵の体力を更新
+          setEnemies(updatedEnemies);
         }
       });
       
@@ -349,8 +354,27 @@ export default function SpaceShooter() {
         });
       }
     });
+
+    // Check for enemy bullets hitting player
+    bullets.forEach((bullet, bulletIndex) => {
+      if (bullet.isEnemy && isColliding(bullet, player)) {
+        // Mark bullet for removal
+        if (!bulletsToRemove.includes(bulletIndex)) {
+          bulletsToRemove.push(bulletIndex);
+        }
+        
+        // Reduce player lives
+        setLives(prev => {
+          if (prev <= 1) {
+            setGameState('gameOver');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }
+    });
     
-    // Enemies hitting player
+    // Check for enemies hitting player
     enemies.forEach((enemy, enemyIndex) => {
       if (isColliding(player, enemy)) {
         // Mark enemy for removal
@@ -506,6 +530,11 @@ export default function SpaceShooter() {
             attackCooldown = 0;
           }
           
+          // ボスが存在する場合は既存の敵を削除
+          if (enemies.length > 0) {
+            setEnemies([]);
+          }
+          
           return {
             ...prev,
             x: newX,
@@ -637,25 +666,27 @@ export default function SpaceShooter() {
             
             {/* Boss */}
             {boss && (
-              <div className="absolute">
+              <div 
+                className="absolute"
+                style={{
+                  left: `${boss.x}%`,
+                  top: `${boss.y}%`,
+                  width: `${boss.width}%`,
+                  height: `${boss.height}%`,
+                  position: 'absolute'
+                }}
+              >
                 <div 
-                  className="bg-red-700"
-                  style={{
-                    left: `${boss.x}%`,
-                    top: `${boss.y}%`,
-                    width: `${boss.width}%`,
-                    height: `${boss.height}%`,
-                    position: "absolute"
-                  }}
+                  className="bg-red-700 w-full h-full"
                 />
                 {/* Boss health bar */}
                 <div 
                   className="bg-gray-700 absolute"
                   style={{
-                    left: `${boss.x}%`,
-                    top: `${boss.y - 3}%`,
-                    width: `${boss.width}%`,
-                    height: "2%",
+                    left: 0,
+                    top: '-15%',
+                    width: '100%',
+                    height: '10%',
                   }}
                 >
                   <div 
