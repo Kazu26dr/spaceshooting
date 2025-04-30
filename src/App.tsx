@@ -77,7 +77,8 @@ export default function SpaceShooter() {
   const gameHeight = 100;
   
   // Start game
-  const startGame = () => {
+  const startGame = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
     setGameState('playing');
     setScore(0);
     setLives(3);
@@ -98,7 +99,10 @@ export default function SpaceShooter() {
   };
   
   // Pause/resume game
-  const togglePause = () => {
+  const togglePause = (e?: React.MouseEvent | React.TouchEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
     if (gameState === 'playing') {
       setGameState('paused');
     } else if (gameState === 'paused') {
@@ -722,6 +726,7 @@ export default function SpaceShooter() {
             </p>
             <button 
               onClick={startGame}
+              onTouchStart={startGame}
               className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
             >
               <Play size={16} className="mr-2" /> Start Game
@@ -735,6 +740,7 @@ export default function SpaceShooter() {
             <h2 className="text-2xl mb-6">Game Paused</h2>
             <button 
               onClick={togglePause}
+              onTouchStart={togglePause}
               className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
             >
               <Play size={16} className="mr-2" /> Resume
@@ -749,6 +755,7 @@ export default function SpaceShooter() {
             <p className="mb-6">Your score: {score}</p>
             <button 
               onClick={startGame}
+              onTouchStart={startGame}
               className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded mb-2"
             >
               <RefreshCw size={16} className="mr-2" /> Play Again
