@@ -566,15 +566,6 @@ export default function SpaceShooter() {
           </div>
         </div>
         
-        {/* Touch controls UI */}
-        {/* {gameState === 'playing' && (
-          <div className="absolute bottom-0 left-0 w-full h-20 bg-black bg-opacity-50 flex items-center justify-center">
-            <div className="text-white text-sm">
-              タッチして移動、下部で射撃
-            </div>
-          </div>
-        )} */}
-        
         {/* Game elements */}
         {gameState === 'playing' || gameState === 'paused' ? (
           <>
