@@ -64,9 +64,13 @@ export default function SpaceShooter() {
   const [doubleShot, setDoubleShot] = useState<boolean>(false);
   const [tripleShot, setTripleShot] = useState<boolean>(false);
   
+  // Touch controls
+  const [touchMove, setTouchMove] = useState<{ x: number; y: number } | null>(null);
+  
   // Refs
   const gameLoopRef = useRef<number | null>(null);
   const keysPressed = useRef<Record<string, boolean>>({});
+  const gameAreaRef = useRef<HTMLDivElement>(null);
   
   // Game area dimensions
   const gameWidth = 100;
@@ -130,6 +134,82 @@ export default function SpaceShooter() {
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, [bulletCooldown, gameState]);
+  
+  // Handle touch controls
+  useEffect(() => {
+    const handleTouchStart = (e: TouchEvent) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const rect = gameAreaRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      const x = ((touch.clientX - rect.left) / rect.width) * 100;
+      const y = ((touch.clientY - rect.top) / rect.height) * 100;
+      
+      setTouchMove({ x, y });
+      
+      // 画面下部のタッチで射撃
+      if (y > 80 && !bulletCooldown && gameState === 'playing') {
+        shootBullet();
+      }
+    };
+    
+    const handleTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const rect = gameAreaRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      const x = ((touch.clientX - rect.left) / rect.width) * 100;
+      const y = ((touch.clientY - rect.top) / rect.height) * 100;
+      
+      setTouchMove({ x, y });
+    };
+    
+    const handleTouchEnd = () => {
+      setTouchMove(null);
+    };
+    
+    const gameArea = gameAreaRef.current;
+    if (gameArea) {
+      gameArea.addEventListener('touchstart', handleTouchStart as EventListener, { passive: false });
+      gameArea.addEventListener('touchmove', handleTouchMove as EventListener, { passive: false });
+      gameArea.addEventListener('touchend', handleTouchEnd as EventListener, { passive: false });
+    }
+    
+    return () => {
+      if (gameArea) {
+        gameArea.removeEventListener('touchstart', handleTouchStart as EventListener);
+        gameArea.removeEventListener('touchmove', handleTouchMove as EventListener);
+        gameArea.removeEventListener('touchend', handleTouchEnd as EventListener);
+      }
+    };
+  }, [bulletCooldown, gameState]);
+  
+  // Update player position based on touch
+  useEffect(() => {
+    if (gameState !== 'playing' || !touchMove) return;
+
+    setPlayer(prev => {
+      let newX = prev.x;
+      let newY = prev.y;
+
+      // タッチ位置に応じてプレイヤーを移動
+      if (touchMove.x < prev.x) {
+        newX = Math.max(0, prev.x - prev.speed);
+      } else if (touchMove.x > prev.x + prev.width) {
+        newX = Math.min(gameWidth - prev.width, prev.x + prev.speed);
+      }
+
+      if (touchMove.y < prev.y) {
+        newY = Math.max(0, prev.y - prev.speed * 0.75);
+      } else if (touchMove.y > prev.y + prev.height) {
+        newY = Math.min(gameHeight - prev.height, prev.y + prev.speed * 0.75);
+      }
+
+      return { ...prev, x: newX, y: newY };
+    });
+  }, [touchMove, gameState]);
   
   // Shooting mechanics
   const shootBullet = () => {
@@ -497,7 +577,10 @@ export default function SpaceShooter() {
       <h1 className="text-3xl font-bold mb-2">Space Shooter</h1>
       
       {/* Game area */}
-      <div className="relative bg-black w-full aspect-square border-2 border-blue-500 overflow-hidden">
+      <div 
+        ref={gameAreaRef}
+        className="relative bg-black w-full aspect-square border-2 border-blue-500 overflow-hidden"
+      >
         {/* Game UI elements */}
         <div className="absolute top-0 left-0 w-full flex justify-between p-2 z-10">
           <div className="flex items-center">
@@ -514,6 +597,15 @@ export default function SpaceShooter() {
             ))}
           </div>
         </div>
+        
+        {/* Touch controls UI */}
+        {/* {gameState === 'playing' && (
+          <div className="absolute bottom-0 left-0 w-full h-20 bg-black bg-opacity-50 flex items-center justify-center">
+            <div className="text-white text-sm">
+              タッチして移動、下部で射撃
+            </div>
+          </div>
+        )} */}
         
         {/* Game elements */}
         {gameState === 'playing' || gameState === 'paused' ? (
