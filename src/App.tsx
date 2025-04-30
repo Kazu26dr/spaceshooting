@@ -1,42 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RefreshCw, Heart } from 'lucide-react';
-
-// Types definitions
-type GameState = 'start' | 'playing' | 'paused' | 'gameOver';
-type PowerUpType = 'doubleShot' | 'tripleShot' | 'health';
-
-interface GameObject {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-interface Player extends GameObject {
-  speed: number;
-}
-
-interface Bullet extends GameObject {
-  isEnemy?: boolean;
-}
-
-interface Enemy extends GameObject {
-  health: number;
-  speed: number;
-  type: 'normal' | 'fast';
-}
-
-interface PowerUp extends GameObject {
-  type: PowerUpType;
-  speed: number;
-}
-
-interface Boss extends GameObject {
-  health: number;
-  maxHealth: number;
-  direction: number;
-  attackCooldown: number;
-}
+import { Player, Bullet, Enemy, PowerUp, Boss, GameObject, GameState, PowerUpType } from './types/types';
 
 export default function SpaceShooter() {
   // Game states
