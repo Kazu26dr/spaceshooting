@@ -188,13 +188,13 @@ export default function SpaceShooter() {
     setBulletCooldown(true);
     
     if (superShot) {
-      setBullets(prev => [
+      setBullets(prev => [ 
         ...prev, 
         { x: player.x - 4, y: player.y - 6, width: 2, height: 4 },
-        { x: player.x - 2, y: player.y - 6, width: 2, height: 4 },
+        { x: player.x, y: player.y - 6, width: 2, height: 4 },
         { x: player.x + player.width / 2 - 1, y: player.y - 6, width: 2, height: 4 },
         { x: player.x + player.width - 2, y: player.y - 6, width: 2, height: 4 },
-        { x: player.x + player.width, y: player.y - 6, width: 2, height: 4 }
+        { x: player.x + player.width + 2, y: player.y - 6, width: 2, height: 4 }
       ]);
     } else if (tripleShot) {
       setBullets(prev => [
@@ -466,7 +466,7 @@ export default function SpaceShooter() {
         } else if (powerUp.type === 'superShot') {
           // Cancel doubleShot if active
           setDoubleShot(false);
-          setTripleShot(true);
+          setTripleShot(false);
           setSuperShot(true);
 
           // Triple shot lasts for 10 seconds
@@ -569,7 +569,7 @@ export default function SpaceShooter() {
             };
           }
           
-          // Boss attacks
+          // Boss attacks 
           let attackCooldown = prev.attackCooldown + 1;
           if (attackCooldown >= 50) { // Attack every 50 frames
             // ボスの種類によって攻撃パターンを変える
@@ -857,7 +857,7 @@ export default function SpaceShooter() {
       {/* Instructions */}
       <div className="mt-4 text-sm text-gray-300 px-4 text-center">
         <p><strong>Controls:</strong> Arrow keys to move, SPACE to shoot, P to pause</p>
-        <p className="mt-1"><strong>Power-ups:</strong> Yellow (2x Shot), Purple (3x Shot), Green (Extra Life)</p>
+        <p className="mt-1"><strong>Power-ups:</strong> Yellow (2x Shot), Purple (3x Shot), Red (5x Shot), Green (Extra Life)</p>
       </div>
     </div>
   );
