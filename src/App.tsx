@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RefreshCw, Heart } from 'lucide-react';
 import { Player, Bullet, Enemy, PowerUp, Boss, GameObject, GameState, PowerUpType } from './types/types';
+import spaceImage from './assets/space.png';
+import enemy1Image from './assets/ememy1.png';
+import enemy2Image from './assets/ememy2.png';
+import bossImage from './assets/boss.png';
+import finalBossImage from './assets/finalBoss.png';
 
 export default function SpaceShooter() {
   // Game states
@@ -668,7 +673,7 @@ export default function SpaceShooter() {
           <>
             {/* Player ship */}
             <img 
-              src="/src/assets/space.png"
+              src={spaceImage}
               alt="Player ship"
               className="absolute" 
               style={{
@@ -697,7 +702,7 @@ export default function SpaceShooter() {
             {enemies.map((enemy, index) => (
               <img 
                 key={`enemy-${index}`}
-                src={`/src/assets/${enemy.type === 'fast' ? 'ememy2.png' : 'ememy1.png'}`}
+                src={enemy.type === 'fast' ? enemy2Image : enemy1Image}
                 alt={`Enemy ${enemy.type}`}
                 className="absolute"
                 style={{
@@ -748,7 +753,7 @@ export default function SpaceShooter() {
                 }}
               >
                 <img 
-                  src={`/src/assets/${boss.isFinal ? 'finalBoss.png' : 'boss.png'}`}
+                  src={boss.isFinal ? finalBossImage : bossImage}
                   alt={boss.isFinal ? 'Final Boss' : 'Boss'}
                   className="w-full h-full"
                 />
