@@ -667,14 +667,15 @@ export default function SpaceShooter() {
         {gameState === 'playing' || gameState === 'paused' ? (
           <>
             {/* Player ship */}
-            <div 
-              className="absolute bg-blue-400" 
+            <img 
+              src="/src/assets/space.png"
+              alt="Player ship"
+              className="absolute" 
               style={{
                 left: `${player.x}%`,
                 top: `${player.y}%`,
                 width: `${player.width}%`,
-                height: `${player.height}%`,
-                clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)"
+                height: `${player.height}%`
               }}
             />
             
@@ -694,16 +695,16 @@ export default function SpaceShooter() {
             
             {/* Enemies */}
             {enemies.map((enemy, index) => (
-              <div 
+              <img 
                 key={`enemy-${index}`}
-                className={`absolute ${enemy.type === 'fast' ? 'bg-green-500' : 'bg-red-600'}`}
+                src={`/src/assets/${enemy.type === 'fast' ? 'ememy2.png' : 'ememy1.png'}`}
+                alt={`Enemy ${enemy.type}`}
+                className="absolute"
                 style={{
                   left: `${enemy.x}%`,
                   top: `${enemy.y}%`,
                   width: `${enemy.width}%`,
-                  height: `${enemy.height}%`,
-                  clipPath: "polygon(50% 0%, 0% 100%, 100% 100%)",
-                  transform: "rotate(180deg)"
+                  height: `${enemy.height}%`
                 }}
               />
             ))}
@@ -746,8 +747,10 @@ export default function SpaceShooter() {
                   position: 'absolute'
                 }}
               >
-                <div 
-                  className={`${boss.isFinal ? 'bg-purple-800' : 'bg-red-700'} w-full h-full`}
+                <img 
+                  src={`/src/assets/${boss.isFinal ? 'finalBoss.png' : 'boss.png'}`}
+                  alt={boss.isFinal ? 'Final Boss' : 'Boss'}
+                  className="w-full h-full"
                 />
                 {/* Boss health bar */}
                 <div 
